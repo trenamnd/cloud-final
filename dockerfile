@@ -1,36 +1,21 @@
 FROM rocker/shiny-verse:latest
 
-WORKDIR ./
+ENV PORT=3838
 
-RUN R -e 'install.packages(c(\
-              "shiny", \
-              "shinydashboard",\
-              "shinyalert", \
-              "shinyjs"), \
-            repos="https://packagemanager.rstudio.com/all/latest"\
-          )'
+# # make user shiny
+# RUN useradd -m shiny
+# RUN chown shiny:shiny /home/shiny
 
-#RUN R -e 'install.packages("remotes")'
-#run R -e 'httr::set_config( httr::config( ssl.verifypeer = 0L ) )'
-#RUN R -e 'remotes::install_github("daattali/shinyjs")'
-# copy the app to the image
-#COPY *.Rproj /srv/shiny-server/
-COPY *.R /srv/shiny-server/
-COPY data/* /srv/shiny-server/data/
-#COPY *.sqlite3 /srv/shiny-server/
+# create app folder for user
+RUN mkdir /home/shiny/app
+RUN chown shiny:shiny /home/shiny/app
 
-# select port
-EXPOSE 8100
-
-# allow permission
-RUN sudo chown -R shiny:shiny /srv/shiny-server
-
-# Copy further configuration files into the Docker image
-COPY shiny-server.sh /usr/bin/shiny-server.sh
-
-RUN ["chmod", "+x", "/usr/bin/shiny-server.sh"]
-
-ENTRYPOINT ["sh","/usr/bin/shiny-server.sh"]
+# copy app
+COPY . /home/shiny/app
+RUN ls /home/shiny/app
+RUN ls /home/shiny/app/app
 
 # run app
-CMD ["/usr/bin/shiny-server.sh"]
+WORKDIR /home/shiny/app
+EXPOSE 3838
+CMD ["Rscript", "/home/shiny/app/run.R"]

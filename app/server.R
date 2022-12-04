@@ -1,5 +1,3 @@
-
-#install.packages("shiny")
 library(shiny)
 library(shinyjs)
 library(DT)

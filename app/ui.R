@@ -2,9 +2,9 @@ library(shiny)
 library(shinyjs)
 library(shinydashboard)
 library(plotly)
+library(DT)
 
 login <- function(){
-  
   div(id='log_in_div',
       h1("Login"),
       h5(id='reg_success', "Registration Successful"), 

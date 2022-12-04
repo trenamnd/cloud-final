@@ -1,2 +1,0 @@
-sudo docker build . -t hello-world
-sudo docker run -p 3838:3838  hello-world
