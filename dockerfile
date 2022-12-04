@@ -5,6 +5,7 @@ WORKDIR ./
 RUN R -e 'install.packages(c(\
               "shiny", \
               "shinydashboard",\
+              "shinyalert", \
               "shinyjs"), \
             repos="https://packagemanager.rstudio.com/all/latest"\
           )'

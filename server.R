@@ -1,11 +1,11 @@
-httr::set_config( httr::config( ssl.verifypeer = 0L ) )
-remotes::install_github("daattali/shinyjs")
-install.packages("shinyjs")
+
 #install.packages("shiny")
 library(shiny)
 library(shinyjs)
-
+library(DT)
 library(shinydashboard)
+library(shinyalert)
+options(shiny.maxRequestSize = 200 * 1024^2) # 200 MB max filesize upload
 
 # Define UI for application that plots random distributions
 DB_households = read.csv("data/400_households.csv")
@@ -15,7 +15,7 @@ DB_products = read.csv("data/400_products.csv")
 DB_transactions = read.csv("data/400_transactions.csv")
 
 DB_users = read.csv("data/users.csv")
-server = shinyServer(function(input, output) {
+server = shinyServer(function(input, output, session) {
   
   observe({
     print("Hello")
@@ -87,6 +87,140 @@ server = shinyServer(function(input, output) {
     }
     
   })
+  updateSelectizeInput(session, 'hshd_num', choices=unique(DB_households$HSHD_NUM), server=TRUE)
   
+  output$hshd_households = DT::renderDataTable({
+    req(input$hshd_num)
+    DB_households[DB_households$HSHD_NUM %in% input$hshd_num, ]
+    
+    
+  })
+  
+  output$hshd_transactions = DT::renderDataTable({
+    req(input$hshd_num)
+    DB_transactions[DB_transactions$HSHD_NUM %in% input$hshd_num, ]
+    
+    
+  })
+  output$hshd_products = DT::renderDataTable({
+    req(input$hshd_num)
+    trans = DB_transactions[DB_transactions$HSHD_NUM %in% input$hshd_num, ]
+    
+    DB_products[DB_products$PRODUCT_NUM %in% unique( trans$PRODUCT_NUM), ]
+    
+    
+  })
+  
+  observeEvent(input$upload, {
+    # Process uploading of new atlas and vas repo data
+    req(input$household_file)
+    req(input$product_file)
+    req(input$transaction_file)
+    shinyjs::hide("upload")
+    DB_households = read.csv("data/400_households.csv")
+    
+    DB_products = read.csv("data/400_products.csv")
+    
+    DB_transactions = read.csv("data/400_transactions.csv")
+    
+    temp_DB_households = read.csv(input$household_file$datapath)
+    
+    temp_DB_products = read.csv(input$product_file$datapath)
+    
+    temp_DB_transactions = read.csv(input$transaction_file$datapath)
+    
+    if(!identical(names(temp_DB_households), names(DB_households))){
+      shinyalert("Oops!", "Error 1: The column names of your HOUSEHOLDS file do not match what is currently in the database.", type='error')
+    }else if(!identical(names(temp_DB_products), names(DB_products))){
+      shinyalert("Oops!", "Error 2: The column names of your PRODUCTS file do not match what is currently in the database.", type='error')
+    }else if(!identical(names(temp_DB_transactions), names(DB_transactions))){
+      shinyalert("Oops!", "Error 3: The column names of your TRANSACTIONS file do not match what is currently in the database.", type='error')
+      
+      
+    }else{
+      
+      write.csv(temp_DB_households, 'data/400_households.csv', row.names = FALSE)
+      write.csv(temp_DB_products, 'data/400_products.csv', row.names = FALSE)
+      write.csv(temp_DB_transactions, 'data/400_transactions.csv', row.names = FALSE)
+      
+      DB_households <<- temp_DB_households
+      DB_products <<- temp_DB_products
+      DB_transactions <<- temp_DB_transactions
+      
+      # Save data
+      shinyalert("Upload Success!", "You are awesome", type='success')
+      
+      
+    }
+    shinyjs::show("upload")
+    
+    
+    
+  })
+  
+  output$amount <- renderPlotly({
+    
+    req(input$pipeline)
+    pipeline = input$pipeline
+    
+    
+    # Need to pivot dt to have a column for each of the pipelined elements (unique members of the pipeline channel)
+    # Keep only one BR per instance
+    
+    
+    DB_households <- DB_households[c('HSHD_NUM', pipeline)]
+    DB_households <- DB_households[complete.cases(DB_households), ] # Remove any row with NA  
+    View(DB_households)
+    names(DB_households) <- c("HSHD_NUM", 'pipeline')
+  
+    
+
+    
+    dt <- dplyr::left_join(DB_households, DB_transactions, by='HSHD_NUM')
+    View(dt)
+    
+    
+    br_filt <- dt %>% dplyr::group_by(pipeline) %>% 
+    dplyr::summarise(sales = sum(SPEND))
+    View(br_filt)
+    
+    barmode = 'group'
+
+    plot_ly(br_filt,x = ~pipeline ,y = ~sales, name=~pipeline, color = ~pipeline, type = 'bar') %>%
+      layout(xaxis=list(title=input$pipeline), 
+             yaxis=list(title="Total Sales"))
+  })
+  output$transactions <- renderPlotly({
+    
+    req(input$pipeline)
+    pipeline = input$pipeline
+    
+    
+    # Need to pivot dt to have a column for each of the pipelined elements (unique members of the pipeline channel)
+    # Keep only one BR per instance
+    
+    
+    DB_households <- DB_households[c('HSHD_NUM', pipeline)]
+    DB_households <- DB_households[complete.cases(DB_households), ] # Remove any row with NA  
+    View(DB_households)
+    names(DB_households) <- c("HSHD_NUM", 'pipeline')
+    
+    
+    DB_transactions$SPEND <- 1
+    
+    dt <- dplyr::left_join(DB_households, DB_transactions, by='HSHD_NUM')
+    View(dt)
+    
+    
+    br_filt <- dt %>% dplyr::group_by(pipeline) %>% 
+      dplyr::summarise(sales = sum(SPEND))
+    View(br_filt)
+    
+    barmode = 'group'
+    
+    plot_ly(br_filt,x = ~pipeline ,y = ~sales, name=~pipeline, color = ~pipeline, type = 'bar') %>%
+      layout(xaxis=list(title=input$pipeline), 
+             yaxis=list(title="Number of Transactions"))
+  })
   
 })
