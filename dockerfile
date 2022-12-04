@@ -9,12 +9,13 @@ RUN R -e 'install.packages(c(\
             repos="https://packagemanager.rstudio.com/all/latest"\
           )'
 
-RUN R -e 'install.packages("remotes")'
-RUN R -e 'remotes::install_github("daattali/shinyjs")'
+#RUN R -e 'install.packages("remotes")'
+#run R -e 'httr::set_config( httr::config( ssl.verifypeer = 0L ) )'
+#RUN R -e 'remotes::install_github("daattali/shinyjs")'
 # copy the app to the image
 #COPY *.Rproj /srv/shiny-server/
 COPY *.R /srv/shiny-server/
-COPY data/ /srv/shiny-server/data/
+COPY data/* /srv/shiny-server/data/
 #COPY *.sqlite3 /srv/shiny-server/
 
 # select port

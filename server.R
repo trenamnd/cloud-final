@@ -1,3 +1,5 @@
+httr::set_config( httr::config( ssl.verifypeer = 0L ) )
+remotes::install_github("daattali/shinyjs")
 install.packages("shinyjs")
 #install.packages("shiny")
 library(shiny)
