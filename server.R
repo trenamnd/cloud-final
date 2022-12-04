@@ -1,8 +1,8 @@
-install.packages("shinyjs")
-#install.packages("shiny")
+install.packages("shinyjs", repos="http://cran.us.r-project.org")
+install.packages("shiny", repos="http://cran.us.r-project.org")
+install.packages("shinydashboard", repos="http://cran.us.r-project.org")
 library(shiny)
 library(shinyjs)
-
 library(shinydashboard)
 
 # Define UI for application that plots random distributions
