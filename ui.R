@@ -1,6 +1,7 @@
 library(shiny)
 library(shinyjs)
 library(shinydashboard)
+library(plotly)
 
 login <- function(){
   
@@ -36,23 +37,62 @@ main_page <- function(){
         
         # Sidebar with a slider input for number of bins 
         dashboardSidebar(
-          selectInput('pipeline', "Pipeline mode", choices=c('Default'='no_pipeline',
-                                                             'Close Status'='close_status',
-                                                             'Close Reason'='close_reason',
-                                                             'Customer Name'='customer_name',
-                                                             'Market Segment'='segment',
-                                                             'Created By'='full_name',
-                                                             'Customer Country'= 'customer_country',
-                                                             'Customer Region'='customer_region',
-                                                             'rs flavor family'='rs_flavor_family'), multiple = F)
+          h5("Stuff can go here")
           
         ),
         dashboardBody(
-          tabsetPanel(tabPanel("a", h1("Hello"))
+          tabsetPanel(tabPanel("Data Pull",
+                               div(
+                                 fluidRow(
+                                  selectInput("hshd_num", label="HSHD", choices=NULL) 
+                                 ),
+                                 fluidRow(
+                                        h1("Households"),
+                                        DT::dataTableOutput('hshd_households'),
+                                        br(), 
+                                        h1("Transactions"),
+                                        DT::dataTableOutput('hshd_transactions'),
+                                        br(),
+                                        h1("Products"),
+                                        DT::dataTableOutput('hshd_products')
+
+                                        )
+                                 
+                                 
+                               )
+                                 
+                                 
+                               ), 
+                      tabPanel("Update Dataset",
+                               div(
+                                 fileInput("household_file", "Upload Household Records DB", multiple=F, accept='.csv'), 
+                                 fileInput("product_file", "Upload Products DB", multiple=F, accept='.csv'), 
+                                 fileInput('transaction_file', "Upload Transactions DB", multiple=F, accept='.csv'),
+                                 actionButton("upload", "Upload"), 
+                                 br()
+                                 )
+                                 
+                                 
+                               ), 
+                      tabPanel("Visualizations", 
+                               div(selectInput("pipeline", "Pipeline Mode", choices=c("AGE_RANGE", "MARITAL", "INCOME_RANGE", "HOMEOWNER", "HH_SIZE", "CHILDREN")), 
+                                   h1("Number of Transactions by Group"),
+                                   plotlyOutput('transactions'), 
+                                   h1("Total $$ Sales By Group"),
+                                   plotlyOutput('amount')
+                                   #selectInput("pipelineY", "Y Axis", choices=c('Num Transactions', 'Total Spent'))
+                                   
+                                   
+                                   ))
+                               
+                               
+                      ), 
+                      
+                               ))
                       # Show a plot of the generated distribution
                       
-          )))
-  )
+          )
+  
   
   
 }
